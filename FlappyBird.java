@@ -1,111 +1,218 @@
-import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Random;
+import javax.swing.*;
 
-public class FlappyBird extends JPanel implements ActionListener {
-    private final int WIDTH = 800;
-    private final int HEIGHT = 600;
-    private final int BIRD_SIZE = 20;
-    private final int PIPE_WIDTH = 100;
-    private final int PIPE_GAP = 150;
-    private final int GRAVITY = 1;
-    private final int JUMP_STRENGTH = 15;
+public class FlappyBird extends JPanel implements ActionListener,
+KeyListener {
+int boardWidth = 360;
+intboardHeight = 640;
 
-    private int birdY = HEIGHT / 2;
-    private int birdVelocity = 0;
-    private ArrayList<Rectangle> pipes;
-    private int score = 0;
-    private boolean gameOver = false;
+//images
+Image backgroundImg;
+Image birdImg;
+Image topPipeImg;
+Image bottomPipeImg;
 
-    public FlappyBird() {
-        setPreferredSize(new Dimension(WIDTH, HEIGHT));
-        setBackground(Color.cyan);
-        setFocusable(true);
-        addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_SPACE && !gameOver) {
-                    birdVelocity = -JUMP_STRENGTH;
-                }
-            }
-        });
+//bird class
+int birdX = boardWidth/8; 
+int birdY = boardWidth/2;
+int birdWidth = 34;
+int birdHeight = 24;
 
-        pipes = new ArrayList<>();
-        Timer timer = new Timer(20, this);
-        timer.start();
-        spawnPipe();
-    }
+class Bird
+{ int x = birdX;
+int y = birdY;
+int width = birdWidth;
+int height = birdHeight;
+Image img;
+Bird(Imageimg)
+{ this.img = img;
+}
+}
 
-    private void spawnPipe() {
-        int pipeHeight = new Random().nextInt(HEIGHT - PIPE_GAP - 100) + 50;
-        pipes.add(new Rectangle(WIDTH, 0, PIPE_WIDTH, pipeHeight));
-        pipes.add(new Rectangle(WIDTH, pipeHeight + PIPE_GAP, PIPE_WIDTH, HEIGHT - pipeHeight - PIPE_GAP));
-    }
+//pipe class
+intpipeX= boardWidth;
+int pipeY = 0;
+intpipeWidth= 64; //scaledby 1/6
+int pipeHeight = 512;
 
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        if (!gameOver) {
-            birdVelocity += GRAVITY;
-            birdY += birdVelocity;
+class Pipe
+{ intx= pipeX;
+int y= pipeY;
+int width = pipeWidth;
 
-            if (birdY > HEIGHT || birdY < 0) {
-                gameOver = true;
-            }
+intheight=pipeHeight;
+Image img;
+boolean passed = false;
 
-            for (int i = 0; i < pipes.size(); i++) {
-                Rectangle pipe = pipes.get(i);
-                pipe.x -= 5;
+Pipe(Imageimg)
+{ this.img = img;
+}
+}
 
-                if (pipe.x + PIPE_WIDTH < 0) {
-                    pipes.remove(i);
-                    i--;
-                    score++;
-                }
+//game logic
+Bird bird;
+int velocityX = -4; //move pipes to the left speed (simulates bird moving right)
+int velocityY = 0; //move bird up/down speed.
+int gravity = 1;
 
-                if (pipe.intersects(new Rectangle(WIDTH / 2 - BIRD_SIZE / 2, birdY, BIRD_SIZE, BIRD_SIZE))) {
-                    gameOver = true;
-                }
-            }
+ArrayList<Pipe> pipes;
+Random random = new Random();
 
-            if (pipes.isEmpty() || pipes.get(pipes.size() - 1).x < WIDTH - 300) {
-                spawnPipe();
-            }
+Timer gameLoop;
+TimerplacePipeTimer;
+boolean gameOver = false;
+double score = 0;
+FlappyBird() {
+setPreferredSize(new Dimension(boardWidth, boardHeight));
+// setBackground(Color.blue);
+setFocusable(true);
+addKeyListener(this);
 
-            repaint();
-        }
-    }
+//load images backgroundImg = new
+ImageIcon(getClass().getResource("./flappybirdbg.png")).getImage();
+birdImg = new
+ImageIcon(getClass().getResource("./flappybird.png")).getImage();
+topPipeImg = new
+ImageIcon(getClass().getResource("./toppipe.png")).getImage();
+bottomPipeImg = new
+ImageIcon(getClass().getResource("./bottompipe.png")).getImage();
 
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        g.setColor(Color.YELLOW);
-        g.fillRect(WIDTH / 2 - BIRD_SIZE / 2, birdY, BIRD_SIZE, BIRD_SIZE);
+//bird
+bird = new Bird(birdImg);
+pipes= new ArrayList<Pipe>();
 
-        g.setColor(Color.GREEN);
-        for (Rectangle pipe : pipes) {
-            g.fillRect(pipe.x, pipe.y, pipe.width, pipe.height);
-        }
+//place pipes timer
+placePipeTimer = new Timer(1500, new ActionListener()
+{ @Override
+public void actionPerformed(ActionEvent e) {
+// Codetobeexecuted
+placePipes();
+}
+});
+placePipeTimer.start();
 
-        g.setColor(Color.BLACK);
-        g.drawString("Score: " + score, 10, 20);
+//game timer
+gameLoop = new Timer(1000/60, this); //how long it takes to start
+timer,milliseconds gone between frames
+gameLoop.start();
+}
+void placePipes() {
+//(0-1) * pipeHeight/2.
+// 0 -> -128 (pipeHeight/4)
+// 1 -> -128 - 256 (pipeHeight/4 - pipeHeight/2) = -3/4 pipeHeight
+int randomPipeY = (int) (pipeY - pipeHeight/4 - Math.random()*(pipeHeight/2));
+int openingSpace = boardHeight/4;
 
-        if (gameOver) {
-            g.setColor(Color.RED);
-            g.drawString("Game Over!", WIDTH / 2 - 30, HEIGHT / 2);
-        }
-    }
+PipetopPipe = new Pipe(topPipeImg);
+topPipe.y = randomPipeY;
+pipes.add(topPipe);
 
-    public static void main(String[] args) {
-        JFrame frame = new JFrame("Flappy Bird");
-        FlappyBird game = new FlappyBird();
-        frame.add(game);
-        frame.pack();
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setVisible(true);
-    }
+Pipe bottomPipe = new Pipe(bottomPipeImg);
+bottomPipe.y = topPipe.y + pipeHeight + openingSpace;
+pipes.add(bottomPipe);
+}
+
+public void paintComponent(Graphics g)
+{ super.paintComponent(g);
+draw(g);
+}
+
+public void draw(Graphics g) {
+//background
+g.drawImage(backgroundImg, 0, 0, this.boardWidth, this.boardHeight, null);
+
+//bird
+g.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height, null);
+
+//pipes
+for (int i = 0; i < pipes.size(); i++)
+{ Pipe = pipes.get(i);
+g.drawImage(pipe.img, pipe.x, pipe.y, pipe.width, pipe.height, null);
+}
+
+//score
+g.setColor(Color.black);
+
+g.setFont(new Font("ROGFonts", Font.BOLD, 42));
+if (gameOver) {
+
+g.drawString("Game Over: " + String.valueOf((int) score), 10, 35);
+}
+else {
+g.drawString(String.valueOf((int) score), 10, 35);
+}
+
+}
+
+public void move() {
+//bird
+velocityY += gravity;
+bird.y += velocityY;
+bird.y = Math.max(bird.y, 0); //apply gravity to current bird.y, limit the bird.y to top of the canvas
+//pipes
+for (int i = 0; i < pipes.size(); i++)
+{ Pipe = pipes.get(i);
+pipe.x += velocityX;
+
+if (!pipe.passed CC bird.x > pipe.x + pipe.width) {
+score += 0.5; //0.5 because there are 2 pipes! so 0.5*2 = 1, 1 for each set of pipes
+pipe.passed = true;
+}
+
+if (collision(bird, pipe))
+{ gameOver = true;
+}
+}
+
+if (bird.y > boardHeight) {
+
+gameOver = true;
+}
+}
+
+boolean collision(Bird a, Pipe b) {
+return a.x < b.x + b.width CC //a's topleft corner doesn't reach b's top right corner
+a.x + a.width > b.x CC //a's top right corner passes b's topleft corner
+a.y < b.y + b.height CC //a's top left corner doesn't reach b's bottom left corner
+a.y + a.height > b.y;	//a's bottom left corner passes b's top left corner
+}
+
+@Override
+public void actionPerformed(ActionEvent e) { //called every x milliseconds by gameLoop timer
+
+move();
+repaint();
+if (gameOver)
+{ placePipeTimer.stop();
+gameLoop.stop();
+}
+}
+
+@Override
+public void keyPressed(KeyEvent e) {
+if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+// System.out.println("JUMP!");
+velocityY = -9;
+if (gameOver) {
+//restartgamebyresettingconditions
+bird.y = birdY;
+velocityY = 0;
+pipes.clear();
+gameOver = false;
+score = 0;
+gameLoop.start();
+placePipeTimer.start();
+}
+}
+}
+
+//not needed
+@Override
+public void keyTyped(KeyEvent e) {}
+
+@Override
+public void keyReleased(KeyEvent e) {}
 }
